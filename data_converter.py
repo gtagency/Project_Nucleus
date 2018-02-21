@@ -14,16 +14,16 @@ from skimage.io import imread, imshow, imread_collection, concatenate_images
 from skimage.transform import resize
 from skimage.morphology import label
 
-from keras.models import Model, load_model
-from keras.layers import Input
-from keras.layers.core import Dropout, Lambda
-from keras.layers.convolutional import Conv2D, Conv2DTranspose
-from keras.layers.pooling import MaxPooling2D
-from keras.layers.merge import concatenate
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras import backend as K
+# from keras.models import Model, load_model
+# from keras.layers import Input
+# from keras.layers.core import Dropout, Lambda
+# from keras.layers.convolutional import Conv2D, Conv2DTranspose
+# from keras.layers.pooling import MaxPooling2D
+# from keras.layers.merge import concatenate
+# from keras.callbacks import EarlyStopping, ModelCheckpoint
+# from keras import backend as K
 
-import tensorflow as tf
+# import tensorflow as tf
 
 # Set some parameters
 IMG_WIDTH = 128
@@ -80,3 +80,7 @@ for n, id_ in tqdm(enumerate(test_ids), total=len(test_ids)):
     X_test[n] = img
 
 print('Done!')
+
+np.save('input/x_train.npy', X_train)
+np.save('input/y_train.npy', Y_train)
+np.save('input/x_test.npy', X_test)
