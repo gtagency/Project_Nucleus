@@ -19,11 +19,12 @@ from skimage.transform import resize
 from skimage.io import imread
 
 from tqdm import tqdm
+import pickle
 
-DO_TRAINING = False
+DO_TRAINING = True
 
 # Root directory of the project
-ROOT_DIR = os.getcwd()
+ROOT_DIR = os.path.dirname(__file__)
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
@@ -103,7 +104,8 @@ class NucleusDataset(utils.Dataset):
         # Generate random specifications of images (i.e. color and
         # list of shapes sizes and locations). This is more compact than
         # actual images. Images are generated on the fly in load_image().
-        TRAIN_PATH = '../input/st1_train/'
+        TRAIN_PATH = os.path.realpath(os.path.join(ROOT_DIR, '..', 'input', 'stage1_train'))
+        # print(os.path.realpath(TRAIN_PATH))
         IMG_HEIGHT = 128
         IMG_WIDTH = 128
         IMG_CHANNELS = 3
@@ -115,12 +117,13 @@ class NucleusDataset(utils.Dataset):
         #Y_train = np.zeros((len(train_ids), IMG_HEIGHT, IMG_WIDTH, 1), dtype=np.bool)
         self.Y_train = []
 
+        # else:
         print('Getting and resizing images and masks ... ')
         sys.stdout.flush()
         j = 0
         for n, id_ in tqdm(enumerate(train_ids), total=len(train_ids)):
             if n in image_id_list:
-                path = TRAIN_PATH + id_
+                path = os.path.join(TRAIN_PATH, id_)
                 img = imread(path + '/images/' + id_ + '.png')[:,:,:IMG_CHANNELS]
                 img = resize(img, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
                 self.add_image("nucleus", j, path)
@@ -137,11 +140,11 @@ class NucleusDataset(utils.Dataset):
                         masks[:,:,i] = mask_
                         i += 1
                 self.Y_train.append(masks)
-        print('Done!')
+        print('Done!  Saving...')
 
     def load_image(self, image_id):
         """Generate an image from the specs of the given image ID.
-        Typically this function loads the image from a file, but
+        Typically this function loads the image from a file, but's
         in this case it generates the image on the fly from the
         specs in image_info.
         """
@@ -162,14 +165,29 @@ class NucleusDataset(utils.Dataset):
 dataset_train = None
 if DO_TRAINING:
     # Training dataset
-    dataset_train = NucleusDataset()
-    dataset_train.load_images(list(range(600)))
-    dataset_train.prepare()
+    dataset_train_path = os.path.join(ROOT_DIR, '..', 'input', 'dataset_train.pkl')
+    if (os.path.exists(dataset_train_path)):
+        with open(dataset_train_path, 'rb') as f:
+            dataset_train = pickle.load(f)
+    else:
+        dataset_train = NucleusDataset()
+        dataset_train.load_images(list(range(600)))
+        dataset_train.prepare()
+        with open(dataset_train_path, 'wb') as f:
+            pickle.dump(dataset_train, f)
 
 # Validation dataset
-dataset_val = NucleusDataset()
-dataset_val.load_images(list(range(600, 670)))
-dataset_val.prepare()
+dataset_val_path = os.path.join(ROOT_DIR, '..', 'input', 'dataset_val.pkl')
+if (os.path.exists(dataset_val_path)):
+    with open(dataset_val_path, 'rb') as f:
+        dataset_val = pickle.load(f)
+else:
+    dataset_val = NucleusDataset()
+    dataset_val.load_images(list(range(600, 670)))
+    dataset_val.prepare()
+    with open(dataset_val_path, 'wb') as f:
+        pickle.dump(dataset_val, f)
+
 
 if DO_TRAINING:
     # Load and display random samples
@@ -186,7 +204,7 @@ if DO_TRAINING:
 
 
     # Which weights to start with?
-    init_with = "last"  # imagenet, coco, or last
+    init_with = "coco"  # imagenet, coco, or last
 
     if init_with == "imagenet":
         model.load_weights(model.get_imagenet_weights(), by_name=True)
