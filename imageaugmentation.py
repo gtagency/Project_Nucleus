@@ -9,12 +9,28 @@ from PIL import Image
 
 
 
+def format_masks(masks):
+    new_masks = np.zeros((670, 128, 128, 3), dtype=np.uint8)
+    for i in range(0, 670):
+        for j in range(0, 128):
+            picture = masks[i][j]
+            zero_array = np.zeros((128, 1))
+            new_masks[i][j] = np.concatenate((picture, zero_array, zero_array), axis=1)
+    return new_masks
+
+
+
 image = np.load('input/x_train.npy')
+labels = np.load('input/y_train.npy')
+labels = np.array(labels, dtype=np.uint8)
+labels = labels * 255
+new_labels = format_masks(labels)
+#print(new_labels.shape)
+print(image.shape)
 sometimes = lambda aug: iaa.Sometimes(0.5, aug)
-#seq = iaa.Sequential([iaa.Fliplr(0.5), iaa.Flipud(0.5) iaa.GaussianBlur(iap.Uniform(0.1, 3.0)), iaa.EdgeDetect(alpha=0.25)], random_order=True)
-#seq1 = iaa.Sequential(iaa.PiecewiseAffine(scale=(0.01, 0.05)))
 ## taken from imagug github
-seq = iaa.Sequential(
+seq = iaa.Sequential(iaa.Fliplr(0.5), iaa.Flipud(0.5))
+seq1 = iaa.Sequential(
     [
         # apply the following augmenters to most images
         iaa.Fliplr(0.5), # horizontally flip 50% of all images
@@ -84,22 +100,14 @@ seq = iaa.Sequential(
 )
 
 
-
-
-
-
-
-
 images_aug = seq.augment_images(np.copy(image))
-
+labels_aug = seq1.augment_images(np.copy(new_labels))
 img = Image.fromarray(image[100], 'RGB')
 augmented_image = Image.fromarray(images_aug[100], 'RGB')
+label_image = Image.fromarray(labels_aug[100], 'RGB')
 img.show()
 augmented_image.show()
-# for i in range(0, len(image)):
-#     img = Image.fromarray(image[i],'RGB')
-#     augmented_image = Image.fromarray(images_aug[i], 'RGB')
+label_image.show()
 
 
-#seq.show_grid(images_aug[0], cols=8, rows=8)
 
